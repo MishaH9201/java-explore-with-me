@@ -1,47 +1,46 @@
-version: '3.1'
+version: '3.8'
 
 services:
-
-  ewm-service:
-    build: main-server/
-    ports:
-      - "8080:8080"
-    depends_on:
-      - ewm-db
-      - stats-server
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql_ewm:5432/explore-with-me
-      - SPRING_DATASOURCE_USERNAME=iamroot
-      - SPRING_DATASOURCE_PASSWORD=iamroot
-      - statServerUrl=http://stats-server:9090
-
-  stats-server:
-    build: stats-server/
-    ports:
-      - "9090:9090"
-    depends_on:
-      - stats-db
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql_stats:5432/explore-with-me-stats
-      - SPRING_DATASOURCE_USERNAME=iamroot
-      - SPRING_DATASOURCE_PASSWORD=iamroot
-
-  ewm-db:
-    image: postgres:14-alpine
-    container_name: postgresql_ewm
+  db-stats:
+    image: postgres:13.7-alpine
     ports:
       - "6541:5432"
+    environment:
+      - POSTGRES_DB=explore-with-me-stats
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+
+  db-main:
+    image: postgres:13.7-alpine
+    ports:
+      - "6542:5432"
     environment:
       - POSTGRES_DB=explore-with-me
       - POSTGRES_USER=iamroot
       - POSTGRES_PASSWORD=iamroot
 
-  stats-db:
-    image: postgres:14-alpine
-    container_name: postgresql_stats
+  main-server:
+    build: ./main-server
     ports:
-      - "6542:5432"
+      - "8080:8080"
+    depends_on:
+      - db-main
+      - stats-server
     environment:
-      - POSTGRES_DB=explore-with-me-stats
+      - SERVER_PORT=8080
+      - STATS-SERVER_URL=http://stats-server:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-main:5432/explore-with-me
       - POSTGRES_USER=iamroot
       - POSTGRES_PASSWORD=iamroot
+
+  stats-server:
+    build: ./stats-server
+    ports:
+      - "9090:9090"
+    depends_on:
+      - db-stats
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-stats:5432/explore-with-me-stats
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+      - SERVER-PORT=9090
