@@ -1,8 +1,0 @@
-{
-  "properties": [
-    {
-      "name": "javax.persistence.schema-generation.database.action",
-      "type": "java.lang.String",
-      "description": "Description for javax.persistence.schema-generation.database.action."
-  }
-] }

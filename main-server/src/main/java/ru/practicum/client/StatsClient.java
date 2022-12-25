@@ -1,5 +1,7 @@
 package ru.practicum.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,8 +20,14 @@ import java.util.List;
 
 @Service
 public class StatsClient {
+    private String url;
     private String app = "ewm-main-service";
-    private WebClient client = WebClient.create("http://localhost:9090");
+@Autowired
+    public StatsClient(@Value("${STATS-SERVER_URL}") String url) {
+        this.url = url;
+    }
+
+    private WebClient client = WebClient.create(/*"http://localhost:9090");*/url);
 
     public void addStats(HttpServletRequest request) {
         EndpointHitDto hit = new EndpointHitDto(app, request.getRequestURI(), request.getRemoteAddr(), LocalDateTime.now().format(DataTime.formatter));
