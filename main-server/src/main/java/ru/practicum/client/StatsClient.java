@@ -23,6 +23,7 @@ public class StatsClient {
     private String url;
     private String app = "ewm-main-service";
     private WebClient client;
+
     @Autowired
     public StatsClient(@Value("${STATS-SERVER_URL}") String url) {
         this.url = url;
