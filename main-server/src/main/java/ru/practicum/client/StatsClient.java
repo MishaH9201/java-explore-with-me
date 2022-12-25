@@ -22,12 +22,13 @@ import java.util.List;
 public class StatsClient {
     private String url;
     private String app = "ewm-main-service";
-@Autowired
+
+    @Autowired
     public StatsClient(@Value("${STATS-SERVER_URL}") String url) {
         this.url = url;
     }
 
-    private WebClient client = WebClient.create(/*"http://localhost:9090");*/url);
+    private WebClient client = WebClient.create(url);
 
     public void addStats(HttpServletRequest request) {
         EndpointHitDto hit = new EndpointHitDto(app, request.getRequestURI(), request.getRemoteAddr(), LocalDateTime.now().format(DataTime.formatter));

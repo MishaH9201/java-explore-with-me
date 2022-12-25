@@ -1,6 +1,5 @@
 package ru.practicum.controller;
 
-import org.jetbrains.annotations.NotNull;
 import ru.practicum.Service.StatsService;
 import ru.practicum.dto.EndpointHitDto;
 import lombok.AllArgsConstructor;
@@ -23,7 +22,7 @@ public class StatsController {
     public static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @PostMapping("/hit")
-    public EndpointHitDto hit(@RequestBody @NotNull EndpointHitDto hit) {
+    public EndpointHitDto hit(@RequestBody EndpointHitDto hit) {
         log.trace("Receiving a POST request for application {} on request to {} from user IP {}.",
                 hit.getApp(), hit.getUri(), hit.getIp());
         return EndpointHitMapper.toEndpointHitDto(statsService.add(hit));
