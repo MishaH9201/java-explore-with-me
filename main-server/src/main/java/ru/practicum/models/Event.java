@@ -63,8 +63,6 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private State state;
 
-    private int confirmedRequests;
-
     public enum State {
         PENDING, PUBLISHED, CANCELED
     }

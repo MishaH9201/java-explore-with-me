@@ -37,10 +37,6 @@ public class FormatForSearch {
         if (filter.getRangeEnd() != null) {
             result = result.and(QEvent.event.eventDate.before(filter.getRangeEnd()));
         }
-
-        if (filter.getOnlyAvailable() != null && filter.getOnlyAvailable()) {
-            result = result.and(QEvent.event.confirmedRequests.gt(QEvent.event.participantLimit));
-        }
         return result;
     }
 
