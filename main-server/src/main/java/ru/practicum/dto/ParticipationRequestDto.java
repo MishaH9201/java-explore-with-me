@@ -8,9 +8,9 @@ import lombok.*;
 @Setter
 @Builder
 public class ParticipationRequestDto {
-    Long id;
-    Long event;
-    Long requester;
-    String created;
-    String status;
+    private Long id;
+    private Long event;
+    private Long requester;
+    private String created;
+    private String status;
 }

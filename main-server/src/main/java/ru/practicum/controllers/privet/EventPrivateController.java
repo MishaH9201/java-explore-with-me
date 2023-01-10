@@ -29,31 +29,31 @@ public class EventPrivateController {
 
     @PatchMapping
     public EventFullDto update(@PathVariable long userId,
-                               @RequestBody UpdateEventRequest request) {
+                               @Valid @RequestBody UpdateEventRequest request) {
         log.trace("Update request user id{}.", userId);
         return eventService.updateEvent(userId, request);
     }
 
     @PatchMapping("/{eventId}")
-    public EventFullDto canceledEvent(
+    public EventFullDto canceled(
             @PathVariable Long userId,
             @PathVariable Long eventId) {
         log.trace("Event canceled {}.", eventId);
-        return eventService.canceledEvent(userId, eventId);
+        return eventService.canceled(userId, eventId);
     }
 
     @PostMapping
-    public EventFullDto addEvent(@PathVariable long userId,
-                                 @RequestBody @Valid NewEventDto eventDto) {
+    public EventFullDto add(@PathVariable long userId,
+                            @RequestBody @Valid NewEventDto eventDto) {
         log.trace("Create Event user id{}.", userId);
-        return eventService.addEvent(userId, eventDto);
+        return eventService.add(userId, eventDto);
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto getEvent(@PathVariable long userId,
-                                 @PathVariable long eventId) {
+    public EventFullDto get(@PathVariable long userId,
+                            @PathVariable long eventId) {
         log.trace("Get event by id {}.", eventId);
-        return eventService.getEvent(userId, eventId);
+        return eventService.getById(userId, eventId);
     }
 
     @GetMapping("/{eventId}/requests")
@@ -80,14 +80,14 @@ public class EventPrivateController {
     }
 
     @GetMapping
-    public List<EventShortDto> findUserEvents(@PathVariable @Positive Long userId,
-                                              @RequestParam(required = false, defaultValue = "0") @PositiveOrZero Integer from,
-                                              @RequestParam(required = false, defaultValue = "10") @Positive Integer size) {
+    public List<EventShortDto> findAllByUserId(@PathVariable @Positive Long userId,
+                                               @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                               @RequestParam(defaultValue = "10") @Positive Integer size) {
         log.info("Get events by user id {},from {}, size {}", userId, from, size);
-        return eventService.findAllEvents(userId, getPageRequest(from, size));
+        return eventService.findAllByUserId(userId, getPageRequest(from, size));
     }
 
-    private PageRequest getPageRequest(int from, int size) {
+    private static PageRequest getPageRequest(int from, int size) {
         int page = from / size;
         return PageRequest.of(page, size, Sort.by("id"));
     }

@@ -1,6 +1,7 @@
 package ru.practicum.service;
 
-import lombok.AllArgsConstructor;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.client.StatsClient;
 import ru.practicum.models.Event;
@@ -15,22 +16,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StatsService {
 
     private final StatsClient client;
     private final EventRepository eventRepository;
 
-public Map<Long, Long> getCount(Iterable<Event> events) {
-    Set<Long> eventIds = new HashSet<>();
-    events.forEach(e -> eventIds.add(e.getId()));
-    return getCountView(eventIds);
-}
-
-    public  Long getCount(Long id) {
+    public Map<Long, Long> getCount(Iterable<Event> events) {
         Set<Long> eventIds = new HashSet<>();
-                eventIds.add(id);
-        Map<Long, Long> result =  getCountView(eventIds);
+        events.forEach(e -> eventIds.add(e.getId()));
+        return getCountView(eventIds);
+    }
+
+    public Long getCount(Long id) {
+        Set<Long> eventIds = new HashSet<>();
+        eventIds.add(id);
+        Map<Long, Long> result = getCountView(eventIds);
         return result.get(id);
     }
 

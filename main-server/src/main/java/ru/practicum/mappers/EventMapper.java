@@ -1,14 +1,16 @@
 package ru.practicum.mappers;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import ru.practicum.dto.events.EventFullDto;
 import ru.practicum.dto.events.EventShortDto;
 import ru.practicum.dto.events.NewEventDto;
-import ru.practicum.format.DataTime;
+import ru.practicum.util.DataTime;
 import ru.practicum.models.Event;
 
 import java.time.LocalDateTime;
 
-
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EventMapper {
     public static EventShortDto toEventShortDto(Event event) {
         return EventShortDto.builder()
@@ -29,16 +31,16 @@ public class EventMapper {
                 .id(event.getId())
                 .title(event.getTitle())
                 .annotation(event.getAnnotation())
-                .eventDate(event.getEventDate().format(DataTime.formatter))
+                .eventDate(event.getEventDate())
                 .description(event.getDescription())
                 .paid(event.isPaid())
                 .initiator(UserMapper.toUserDtoShort(event.getInitiator()))
                 .category(CategoryMapper.toCategoryDto(event.getCategory()))
-                .confirmedRequests(event.getConfirmedRequests())
-                .createdOn(event.getCreatedOn().format(DataTime.formatter))
+                .confirmedRequests(0)
+                .createdOn(event.getCreatedOn())
                 .views(0)
                 .requestModeration(event.isRequestModeration())
-                .publishedOn((event.getState() == Event.State.PUBLISHED) ? event.getPublishedOn().format(DataTime.formatter) : null)
+                .publishedOn((event.getState() == Event.State.PUBLISHED) ? event.getPublishedOn() : null)
                 .location(event.getLocation())
                 .participantLimit(event.getParticipantLimit())
                 .state(event.getState())
@@ -46,35 +48,18 @@ public class EventMapper {
     }
 
     public static Event toEvent(NewEventDto eventDto) {
-        boolean paid = false;
-        Integer participantLimit = 0;
-        boolean requestModeration = false;
-
-        if (eventDto.getPaid() != null) {
-            paid = eventDto.getPaid();
-        }
-
-        if (eventDto.getRequestModeration() != null) {
-            requestModeration = eventDto.getRequestModeration();
-        }
-
-        if (eventDto.getParticipantLimit() != null) {
-            participantLimit = eventDto.getParticipantLimit();
-        }
-
         return Event.builder()
                 .title(eventDto.getTitle())
                 .annotation(eventDto.getAnnotation())
                 .description(eventDto.getDescription())
-                .eventDate(DataTime.getDataTime(eventDto.getEventDate()))
+                .eventDate(eventDto.getEventDate())
                 .createdOn(LocalDateTime.now())
                 .location(eventDto.getLocation())
-                .paid(paid)
-                .participantLimit(participantLimit)
-                .requestModeration(requestModeration)
+                .paid(eventDto.isPaid())
+                .participantLimit(eventDto.getParticipantLimit())
+                .requestModeration(eventDto.isRequestModeration())
                 .state(Event.State.PENDING)
                 .build();
     }
-
 }
 

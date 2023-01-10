@@ -1,6 +1,8 @@
-package ru.practicum.models;
+package ru.practicum.models.request;
 
 import lombok.*;
+import ru.practicum.models.Event;
+import ru.practicum.models.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;

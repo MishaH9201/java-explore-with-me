@@ -11,7 +11,5 @@ public class ApiError {
     private String reason;
     private String status;
     private String timestamp;
-
-
 }
 

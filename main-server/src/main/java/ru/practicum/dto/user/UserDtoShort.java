@@ -7,7 +7,8 @@ import lombok.Setter;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
 
 @Getter
 @Setter
@@ -15,8 +16,10 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class UserDtoShort {
     @Email
-    @NotNull
+    @NotBlank
+    @Size(max = 512)
     private String email;
-@NotBlank
+    @NotBlank
+    @Size(max = 255)
     private String name;
 }

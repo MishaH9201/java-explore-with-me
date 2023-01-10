@@ -14,7 +14,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Embeddable
 public class Location {
-    Double lat;
-    Double lon;
+  private   Double lat;
+   private Double lon;
 
 }

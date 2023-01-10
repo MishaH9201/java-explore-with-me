@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.practicum.dto.EndpointHitDto;
-import ru.practicum.format.DataTime;
+import ru.practicum.util.DataTime;
 import ru.practicum.models.stats.ViewStats;
 
 import javax.servlet.http.HttpServletRequest;
@@ -21,12 +21,13 @@ import java.util.List;
 @Service
 public class StatsClient {
     private String url;
-    private String app = "ewm-main-service";
+    private String app;
     private WebClient client;
 
     @Autowired
-    public StatsClient(@Value("${STATS-SERVER_URL}") String url) {
+    public StatsClient(@Value("${STATS-SERVER_URL}") String url, @Value("${appName}") String app) {
         this.url = url;
+        this.app = app;
         client = WebClient.create(url);
     }
 

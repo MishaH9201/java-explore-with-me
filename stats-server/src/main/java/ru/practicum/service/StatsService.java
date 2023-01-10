@@ -1,9 +1,10 @@
-package ru.practicum.Service;
+package ru.practicum.service;
 
 import com.google.common.collect.Lists;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.EndpointHitDto;
-import lombok.AllArgsConstructor;
 import ru.practicum.mapper.EndpointHitMapper;
 import ru.practicum.model.EndpointHit;
 
@@ -17,7 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StatsService {
     private final StatsRepository statsRepository;
 
@@ -43,7 +45,7 @@ public class StatsService {
         }
     }
 
-
+@Transactional
     public EndpointHit add(EndpointHitDto hitDto) {
         EndpointHit hit = EndpointHitMapper.toEndpointHit(hitDto);
         return statsRepository.save(hit);

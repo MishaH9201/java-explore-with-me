@@ -1,9 +1,11 @@
 package ru.practicum.service;
 
-import lombok.AllArgsConstructor;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.dto.user.UserDto;
 import ru.practicum.dto.user.UserDtoShort;
@@ -11,25 +13,34 @@ import ru.practicum.mappers.UserMapper;
 import ru.practicum.models.User;
 import ru.practicum.repositories.UserRepository;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository repository;
 
-    public UserDto saveUser(UserDtoShort userDtoShort) {
-        if (repository.findByName(userDtoShort.getName()) != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Name already in use");
-        }
+    @Transactional
+    public UserDto save(UserDtoShort userDtoShort) {
         User user = UserMapper.toUser(userDtoShort);
-        return UserMapper.toUserDto(repository.save(user));
+        try {
+            return UserMapper.toUserDto(repository.save(user));
+        } catch (RuntimeException e) {
+            Throwable rootCause = com.google.common.base.Throwables.getRootCause(e);
+            if (rootCause instanceof SQLException) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Name already in use");
+            } else {
+                throw e;
+            }
+        }
     }
 
-    public List<UserDto> getUsers(PageRequest pageRequest, Long[] ids) {
+    public List<UserDto> get(PageRequest pageRequest, Long[] ids) {
         if (ids == null) {
             return repository.findAll(pageRequest).stream()
                     .map(UserMapper::toUserDto)
@@ -41,7 +52,8 @@ public class UserService {
         }
     }
 
-    public void deleteUser(Long id) {
+    @Transactional
+    public void delete(Long id) {
         repository.deleteById(id);
     }
 }

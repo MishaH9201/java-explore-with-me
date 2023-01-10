@@ -11,6 +11,8 @@ import ru.practicum.dto.user.UserDtoShort;
 import ru.practicum.service.UserService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,25 +26,25 @@ public class UserAdminController {
     private final UserService userService;
 
     @PostMapping
-    public UserDto saveNewUser(@RequestBody @Valid UserDtoShort userDto) {
+    public UserDto save(@RequestBody @Valid UserDtoShort userDto) {
         log.info("User {} create", userDto);
-        return userService.saveUser(userDto);
+        return userService.save(userDto);
     }
 
     @GetMapping
     public List<UserDto> get(@RequestParam(required = false) Long[] ids,
-            @RequestParam(defaultValue = "0") Integer from,
-                                        @RequestParam(defaultValue = "10") Integer size) {
+                             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+                             @RequestParam(defaultValue = "10") @Positive int size) {
         log.info("Get users by ids {},from {}, size {}", Arrays.toString(ids), from, size);
-        return userService.getUsers(getPageRequest(from, size),ids);
+        return userService.get(getPageRequest(from, size), ids);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public void delete(@PathVariable Long id) {
+        userService.delete(id);
     }
 
-    private PageRequest getPageRequest(int from, int size) {
+    private static PageRequest getPageRequest(int from, int size) {
         int page = from / size;
         return PageRequest.of(page, size, Sort.by("id"));
     }

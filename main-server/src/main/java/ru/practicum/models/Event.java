@@ -4,7 +4,7 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Set;
+
 
 @Entity
 @Table(name = "events")
@@ -26,7 +26,6 @@ public class Event {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "lat", column = @Column(name = "location_lat")),
             @AttributeOverride(name = "lon", column = @Column(name = "location_lon"))})
@@ -64,11 +63,7 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private State state;
 
-    @Column(name = "confirmed_requests")
     private int confirmedRequests;
-
-    @ManyToMany(mappedBy = "events")
-    Set<Compilation> compilations;
 
     public enum State {
         PENDING, PUBLISHED, CANCELED

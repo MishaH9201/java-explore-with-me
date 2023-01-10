@@ -1,20 +1,22 @@
 package ru.practicum.service.event;
 
 import com.google.common.collect.Lists;
-import lombok.AllArgsConstructor;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.dto.events.AdminUpdateEventRequest;
 import ru.practicum.dto.ParticipationRequestDto;
 import ru.practicum.dto.events.*;
-import ru.practicum.format.DataTime;
 import ru.practicum.mappers.EventMapper;
 import ru.practicum.mappers.RequestMapper;
 import ru.practicum.models.*;
+import ru.practicum.models.request.Request;
+import ru.practicum.models.request.RequestCount;
 import ru.practicum.repositories.CategoryRepository;
 import ru.practicum.repositories.EventRepository;
 import ru.practicum.repositories.RequestRepository;
@@ -27,7 +29,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class EventService {
     private final EventRepository repository;
     private final UserRepository userRepository;
@@ -36,17 +39,17 @@ public class EventService {
     private final StatsService statsService;
 
 
-    public List<EventShortDto> findAllEvents(Long userId, PageRequest pageRequest) {
+    public List<EventShortDto> findAllByUserId(Long userId, PageRequest pageRequest) {
         userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return repository.findAllByInitiatorId(userId, pageRequest).stream()
                 .map(EventMapper::toEventShortDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public EventFullDto publishEvent(long eventId) {
         Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         LocalDateTime publishTime = LocalDateTime.now();
-
         if (event.getEventDate().minusHours(1).isBefore(publishTime)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect time frames");
         }
@@ -55,34 +58,37 @@ public class EventService {
         }
         event.setPublishedOn(publishTime);
         event.setState(Event.State.PUBLISHED);
-        event.setConfirmedRequests(requestRepository.getConfirmedRequestsAmount(eventId));
-        EventFullDto eventFullDto = EventMapper.toEventFullDto(repository.save(event));
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(event);
+        statsService.getCount(eventId);
         eventFullDto.setViews(statsService.getCount(eventId));
+        eventFullDto.setConfirmedRequests(requestRepository.getConfirmedRequestsAmount(eventId));
         return eventFullDto;
     }
 
+    @Transactional
     public EventFullDto rejectEventAdmin(long eventId) {
         Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-
         if (event.getState() == Event.State.PUBLISHED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't be changed PENDING events");
         }
         event.setState(Event.State.CANCELED);
-        EventFullDto eventFullDto = EventMapper.toEventFullDto(repository.save(event));
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(event);
         eventFullDto.setViews(statsService.getCount(eventId));
         return eventFullDto;
     }
 
+    @Transactional
     public EventFullDto updateEvent(long userId, UpdateEventRequest request) {
+        if (request.getEventDate().isBefore(LocalDateTime.now().minusHours(2))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Time error");
+        }
         Event basicEvent = repository.findById(request.getEventId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if ((basicEvent.getState() != Event.State.PENDING)
                 && (basicEvent.getState() != Event.State.CANCELED)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only PENDING and CANCELED events can be updated");
         }
-        if (basicEvent.getEventDate().isBefore(LocalDateTime.now().minusHours(2))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Time error");
-        }
+
         if (request.getAnnotation() != null && !request.getAnnotation().isBlank()) {
             basicEvent.setAnnotation(request.getAnnotation());
         }
@@ -93,7 +99,7 @@ public class EventService {
             basicEvent.setDescription(request.getDescription());
         }
         if (request.getEventDate() != null) {
-            basicEvent.setEventDate(LocalDateTime.parse(request.getEventDate(), DataTime.formatter));
+            basicEvent.setEventDate(request.getEventDate());
         }
         if (request.getPaid() != null) {
             basicEvent.setPaid(request.getPaid());
@@ -104,12 +110,12 @@ public class EventService {
         if (basicEvent.getState() == Event.State.CANCELED) {
             basicEvent.setState(Event.State.PENDING);
         }
-        EventFullDto eventFullDto = EventMapper.toEventFullDto(repository.save(basicEvent));
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(basicEvent);
         eventFullDto.setViews(statsService.getCount(request.getEventId()));
         return eventFullDto;
     }
 
-
+    @Transactional
     public EventFullDto updateEventAdmin(long eventId, AdminUpdateEventRequest request) {
         Event event = repository.findById(eventId).orElseThrow(() -> {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found.");
@@ -130,7 +136,7 @@ public class EventService {
             event.setDescription(request.getDescription());
         }
         if (request.getEventDate() != null) {
-            event.setEventDate(LocalDateTime.parse(request.getEventDate(), DataTime.formatter));
+            event.setEventDate(request.getEventDate());
         }
         if (request.getPaid() != null) {
             event.setPaid(request.getPaid());
@@ -144,12 +150,13 @@ public class EventService {
         if (request.getLocation() != null) {
             event.setLocation(request.getLocation());
         }
-        EventFullDto eventFullDto = EventMapper.toEventFullDto(repository.save(event));
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(event);
         eventFullDto.setViews(statsService.getCount(eventId));
         return eventFullDto;
     }
 
-    public EventFullDto canceledEvent(Long userId, Long eventId) {
+    @Transactional
+    public EventFullDto canceled(Long userId, Long eventId) {
         Event basicEvent = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         if (!userId.equals(basicEvent.getInitiator().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own events");
@@ -158,24 +165,25 @@ public class EventService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cancel only PENDING events");
         }
         basicEvent.setState(Event.State.CANCELED);
-        EventFullDto eventFullDto = EventMapper.toEventFullDto(repository.save(basicEvent));
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(basicEvent);
         eventFullDto.setViews(statsService.getCount(eventId));
         return eventFullDto;
     }
 
-    public EventFullDto addEvent(long userId, NewEventDto eventDto) {
+    @Transactional
+    public EventFullDto add(long userId, NewEventDto eventDto) {
+        if (eventDto.getEventDate().isBefore(LocalDateTime.now().minusHours(2))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Time error");
+        }
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Category category = categoryRepository.findById(eventDto.getCategory()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
         Event event = EventMapper.toEvent(eventDto);
         event.setInitiator(user);
         event.setCategory(category);
-        if (event.getEventDate().isBefore(LocalDateTime.now().minusHours(2))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Time error");
-        }
         return EventMapper.toEventFullDto(repository.save(event));
     }
 
-    public EventFullDto getEvent(long userId, long eventId) {
+    public EventFullDto getById(long userId, long eventId) {
         userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User  not found"));
         Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         if (event.getInitiator().getId() != userId) {
@@ -196,12 +204,13 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public ParticipationRequestDto confirmationOfRequest(Long userId, Long eventId, Long reqId) {
         Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Request request = requestRepository.findById(reqId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if (event.getParticipantLimit() > 0) {
-            int count = requestRepository.getConfirmedRequestsAmount(event.getId());
+            long count = requestRepository.getConfirmedRequestsAmount(event.getId());
             if (event.getParticipantLimit() <= requestRepository.getConfirmedRequestsAmount(event.getId())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Places are over");
             }
@@ -211,7 +220,6 @@ public class EventService {
                 long limit = event.getParticipantLimit();
                 if (count >= limit) {
                     request.setState(Request.State.REJECTED);
-                    requestRepository.save(request);
                 }
             }
         }
@@ -225,8 +233,14 @@ public class EventService {
             Map<Long, Long> statsCount = statsService.getCount(events);
             List<EventShortDto> eventsDto = new ArrayList<>();
             events.forEach((e) -> eventsDto.add(EventMapper.toEventShortDto(e)));
+            List<Long> ids = eventList.stream().map(Event::getId).collect(Collectors.toList());
+            List<RequestCount> requestCounts = requestRepository.getConfirmedRequestsAmount(ids);
             eventsDto.forEach((e) -> {
-                e.setConfirmedRequests(requestRepository.getConfirmedRequestsAmount(e.getId()));
+                for (RequestCount f : requestCounts) {
+                    if (f.getId().equals(e.getId())) {
+                        e.setConfirmedRequests(f.getCount());
+                    }
+                }
                 if (statsCount.containsKey(e.getId())) {
                     e.setViews(statsCount.get(e.getId()));
                 }
@@ -246,8 +260,21 @@ public class EventService {
 
     public List<EventFullDto> findAllEventsAdmin(SearchEventAdmin searchEventAdmin, PageRequest pageRequest) {
         Iterable<Event> events = repository.findAll(FormatForSearch.formatExpression(searchEventAdmin), pageRequest);
+        Map<Long, Long> statsCount = statsService.getCount(events);
         List<EventFullDto> eventsDto = new ArrayList<>();
         events.forEach((e) -> eventsDto.add(EventMapper.toEventFullDto(e)));
+        List<Long> ids = eventsDto.stream().map(EventFullDto::getId).collect(Collectors.toList());
+        List<RequestCount> requestCounts = requestRepository.getConfirmedRequestsAmount(ids);
+        eventsDto.forEach((e) -> {
+            for (RequestCount f : requestCounts) {
+                if (f.getId().equals(e.getId())) {
+                    e.setConfirmedRequests(f.getCount());
+                }
+            }
+            if (statsCount.containsKey(e.getId())) {
+                e.setViews(statsCount.get(e.getId()));
+            }
+        });
         return eventsDto;
     }
 
@@ -262,6 +289,7 @@ public class EventService {
         return eventFullDto;
     }
 
+    @Transactional
     public ParticipationRequestDto rejectEvent(Long userId, Long eventId, Long reqId) {
         repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
