@@ -298,7 +298,7 @@ public class EventService {
     public ParticipationRequestDto rejectEvent(Long userId, Long eventId, Long reqId) {
         Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        if (event.getInitiator().getId() != user.getId()) {
+        if (!event.getInitiator().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID " + reqId + " isn`t initiator.");
         }
         Request request = requestRepository.findById(reqId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
