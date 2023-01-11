@@ -37,8 +37,8 @@ public class EventPublicController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
             @RequestParam(required = false) Boolean onlyAvailable,
             @RequestParam(defaultValue = "EVENT_DATE") String sort,
-            @PositiveOrZero @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-            @Positive @RequestParam(defaultValue = "10") @Positive int size,
+            @PositiveOrZero @RequestParam(defaultValue = "0") int from,
+            @Positive @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
         SearchEvent searchEvent = SearchEvent.builder()
                 .text(text)

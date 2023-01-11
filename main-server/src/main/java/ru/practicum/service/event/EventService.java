@@ -16,7 +16,6 @@ import ru.practicum.mappers.EventMapper;
 import ru.practicum.mappers.RequestMapper;
 import ru.practicum.models.*;
 import ru.practicum.models.request.Request;
-import ru.practicum.models.request.RequestCount;
 import ru.practicum.repositories.CategoryRepository;
 import ru.practicum.repositories.EventRepository;
 import ru.practicum.repositories.RequestRepository;
@@ -27,6 +26,8 @@ import ru.practicum.service.StatsService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 @Service
 @RequiredArgsConstructor
@@ -216,11 +217,15 @@ public class EventService {
             }
             request.setState(Request.State.CONFIRMED);
             requestRepository.save(request);
+            long limit = event.getParticipantLimit();
             if (event.getParticipantLimit() > 0) {
-                long limit = event.getParticipantLimit();
                 if (count >= limit) {
                     request.setState(Request.State.REJECTED);
                 }
+            }
+            if (limit <= ++count) {
+                requestRepository.findAllByEvent_IdAndState(event.getId(), Request.State.PENDING)
+                        .forEach(e -> e.setState(Request.State.CANCELED));
             }
         }
         return RequestMapper.toParticipationRequestDto(request);
@@ -234,12 +239,12 @@ public class EventService {
             List<EventShortDto> eventsDto = new ArrayList<>();
             events.forEach((e) -> eventsDto.add(EventMapper.toEventShortDto(e)));
             List<Long> ids = eventList.stream().map(Event::getId).collect(Collectors.toList());
-            List<RequestCount> requestCounts = requestRepository.getConfirmedRequestsAmount(ids);
+            Map<Long, Long> requestCounts = requestRepository.getConfirmedRequestsAmount(ids)
+                    .stream()
+                    .collect(toMap(r -> r.getId(), r -> r.getCount()));
             eventsDto.forEach((e) -> {
-                for (RequestCount f : requestCounts) {
-                    if (f.getId().equals(e.getId())) {
-                        e.setConfirmedRequests(f.getCount());
-                    }
+                if (requestCounts.containsKey(e.getId())) {
+                    e.setConfirmedRequests(requestCounts.get(e.getId()));
                 }
                 if (statsCount.containsKey(e.getId())) {
                     e.setViews(statsCount.get(e.getId()));
@@ -264,12 +269,12 @@ public class EventService {
         List<EventFullDto> eventsDto = new ArrayList<>();
         events.forEach((e) -> eventsDto.add(EventMapper.toEventFullDto(e)));
         List<Long> ids = eventsDto.stream().map(EventFullDto::getId).collect(Collectors.toList());
-        List<RequestCount> requestCounts = requestRepository.getConfirmedRequestsAmount(ids);
+        Map<Long, Long> requestCounts = requestRepository.getConfirmedRequestsAmount(ids)
+                .stream()
+                .collect(toMap(r -> r.getId(), r -> r.getCount()));
         eventsDto.forEach((e) -> {
-            for (RequestCount f : requestCounts) {
-                if (f.getId().equals(e.getId())) {
-                    e.setConfirmedRequests(f.getCount());
-                }
+            if (requestCounts.containsKey(e.getId())) {
+                e.setConfirmedRequests(requestCounts.get(e.getId()));
             }
             if (statsCount.containsKey(e.getId())) {
                 e.setViews(statsCount.get(e.getId()));
@@ -291,8 +296,11 @@ public class EventService {
 
     @Transactional
     public ParticipationRequestDto rejectEvent(Long userId, Long eventId, Long reqId) {
-        repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-        userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        Event event = repository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (event.getInitiator().getId() != user.getId()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID " + reqId + " isn`t initiator.");
+        }
         Request request = requestRepository.findById(reqId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found"));
         if (request.getState().equals(Request.State.REJECTED)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error: request ID " + reqId + " REJECTED already.");

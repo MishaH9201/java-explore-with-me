@@ -5,6 +5,7 @@ import ru.practicum.dto.events.SearchEvent;
 import ru.practicum.dto.events.SearchEventAdmin;
 import ru.practicum.models.Event;
 import ru.practicum.models.QEvent;
+import ru.practicum.models.request.QRequest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -36,6 +37,9 @@ public class FormatForSearch {
         }
         if (filter.getRangeEnd() != null) {
             result = result.and(QEvent.event.eventDate.before(filter.getRangeEnd()));
+        }
+        if (filter.getOnlyAvailable() != null && filter.getOnlyAvailable()) {
+            result = result.and(QRequest.request.event.count().gt(QEvent.event.participantLimit));
         }
         return result;
     }

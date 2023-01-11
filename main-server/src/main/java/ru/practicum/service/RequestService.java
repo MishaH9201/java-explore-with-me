@@ -50,7 +50,7 @@ public class RequestService {
         if (event.getState() != Event.State.PUBLISHED) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event is not published yet");
         }
-        if (event.getParticipantLimit() <= 0) {
+        if (event.getParticipantLimit() > 0) {
             long confirmedRequests = repository.getConfirmedRequestsAmount(eventId);
             if (confirmedRequests == event.getParticipantLimit()) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Participant limit reached");

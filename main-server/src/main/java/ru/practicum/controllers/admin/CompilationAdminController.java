@@ -47,13 +47,13 @@ public class CompilationAdminController {
 
     @PatchMapping(value = "/{compId}/pin")
     public void pin(@PathVariable @Positive long compId) {
-        compilationService.pin(compId, true);
+        compilationService.pin(compId);
         log.info("Collection id {} is pinned", compId);
     }
 
     @DeleteMapping(value = "/{compId}/pin")
     public void unpin(@PathVariable @Positive long compId) {
-        compilationService.unpin(compId, false);
+        compilationService.unpin(compId);
         log.info("Collection id {} is unpinned", compId);
     }
 }

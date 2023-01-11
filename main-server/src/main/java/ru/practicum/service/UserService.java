@@ -41,7 +41,7 @@ public class UserService {
     }
 
     public List<UserDto> get(PageRequest pageRequest, Long[] ids) {
-        if (ids == null) {
+        if (ids == null || ids.length == 0) {
             return repository.findAll(pageRequest).stream()
                     .map(UserMapper::toUserDto)
                     .collect(Collectors.toList());

@@ -59,7 +59,6 @@ public class CompilationService {
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         Set<Event> events = result.getEvents();
         events.add(event);
-        result.setEvents(events);
     }
 
     @Transactional
@@ -78,13 +77,16 @@ public class CompilationService {
     }
 
     @Transactional
-    public void pin(long compId, boolean pinned) {
-        Compilation result = repository.findById(compId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Compilation not found"));
-        result.setPinned(pinned);
+    public void pin(long compId) {
+        attach(compId, true);
     }
 
     @Transactional
-    public void unpin(long compId, boolean pinned) {
+    public void unpin(long compId) {
+        attach(compId, false);
+    }
+
+    private void attach(long compId, boolean pinned) {
         Compilation result = repository.findById(compId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Compilation not found"));
         result.setPinned(pinned);
     }
