@@ -1,15 +1,55 @@
-version: '3.1'
+version: '3.8'
+
 services:
   stats-server:
+    build: ./stats-server
     ports:
       - "9090:9090"
+    depends_on:
+      - stats-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/explore-with-me-stats
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+      - SERVER-PORT=9090
+
+  ewm-service:
+    build: ./main-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ewm-db
+      - stats-server
+    environment:
+      - SERVER_PORT=8080
+      - STATS-SERVER_URL=http://stats-server:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/explore-with-me
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+
 
   stats-db:
     image: postgres:14-alpine
-
-  ewm-service:
     ports:
-      - "8080:8080"
+      - "6541:5432"
+    volumes:
+     - ./unit-stats:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_DB=explore-with-me-stats
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+
+
 
   ewm-db:
     image: postgres:14-alpine
+    ports:
+      - "6542:5432"
+    volumes:
+      - ./unit-ewv:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_DB=explore-with-me
+      - POSTGRES_USER=iamroot
+      - POSTGRES_PASSWORD=iamroot
+
+
