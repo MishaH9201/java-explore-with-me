@@ -684,14 +684,15 @@
 							"    pm.expect(jsonData.length, 'comments count in total').to.eql(2);\r",
 							"pm.test(\"Test get comment\", function () {\r",
 							"    var jsonData = pm.response.json();\r",
-							"    pm.expect(jsonData[0].id, '\"id\" field').to.eql(1);\r",
+							"\r",
+							"   pm.expect(jsonData[0].id, '\"id\" field').to.eql(1);\r",
 							"    pm.expect(jsonData[0].text, '\"text\" field').to.eql('Пила');\r",
-							"    pm.expect(jsonData[0].event.id, '\"event.id\" field').to.eql(1);\r",
+							"    pm.expect(jsonData[0].eventId, '\"eventId\" field').to.eql(1);\r",
 							"    pm.expect(jsonData[0].participant, '\"participant\" field').to.false;\r",
 							"\r",
-							"    pm.expect(jsonData[1].id, '\"id\" field').to.eql(2);\r",
+							"     pm.expect(jsonData[1].id, '\"id\" field').to.eql(2);\r",
 							"    pm.expect(jsonData[1].text, '\"text\" field').to.eql('Миру мир');\r",
-							"    pm.expect(jsonData[1].event.id, '\"event.id\" field').to.eql(1);\r",
+							"    pm.expect(jsonData[1].eventId, '\"eventId\" field').to.eql(1);\r",
 							"    pm.expect(jsonData[1].participant, '\"participant\" field').to.false;\r",
 							"});\r",
 							""
@@ -746,11 +747,25 @@
 		},
 		{
 			"name": "delete someone else's comment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {\r",
+							"    pm.expect(pm.response.code).to.be.oneOf([400,500]);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/users/:userId/events/:eventId/comments",
+					"raw": "http://localhost:8080/users/:userId/events/:eventId/comments/:commentId",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -761,16 +776,21 @@
 						":userId",
 						"events",
 						":eventId",
-						"comments"
+						"comments",
+						":commentId"
 					],
 					"variable": [
 						{
 							"key": "userId",
-							"value": null
+							"value": "88"
 						},
 						{
 							"key": "eventId",
 							"value": null
+						},
+						{
+							"key": "commentId",
+							"value": "2"
 						}
 					]
 				}
