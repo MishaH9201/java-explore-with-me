@@ -1,9 +1,7 @@
 package ru.practicum.dto.comments;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import ru.practicum.util.FilthyLanguage;
 
 import javax.validation.constraints.NotBlank;
@@ -14,9 +12,10 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class NewCommentDto {
     @FilthyLanguage
     @Size(max = 280)
     @NotBlank
-    private String text;
+    String text;
 }

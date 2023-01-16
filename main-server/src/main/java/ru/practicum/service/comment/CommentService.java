@@ -37,11 +37,7 @@ public class CommentService {
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Comment comment = repository.save(CommentMapper.toComment(commentDto, user, event));
-        if (requestRepository.existsRequestByRequesterIdAndState(userId, Request.State.CONFIRMED)) {
-            comment.setParticipant(true);
-        } else {
-            comment.setParticipant(false);
-        }
+        comment.setParticipant(requestRepository.existsRequestByRequesterIdAndState(userId, Request.State.CONFIRMED));
         return CommentMapper.toCommentFullDto(comment);
     }
 
