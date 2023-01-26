@@ -1,4 +1,4 @@
-package ru.practicum.controller;
+package ru.practicum.service.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
